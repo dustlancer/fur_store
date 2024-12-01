@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .order-summary {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        .order-summary th, .order-summary td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        .order-summary th {
+            background-color: #f2f2f2;
+            text-align: left;
+        }
+        .total {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h2>Спасибо за ваш заказ!</h2>
+    <p>Ваш заказ <strong>№{{ order_id }}</strong> был успешно создан и оплачен.</p>
+    <p>Вот список ваших покупок:</p>
+    <table class="order-summary">
+        <thead>
+            <tr>
+                <th>Товар</th>
+                <th>Количество</th>
+                <th>Цена за единицу</th>
+                <th>Сумма</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.product }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.price }}</td>
+                <td>{{ item.total }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p class="total">Итого: {{ total_price }} руб.</p>
+    <p>С уважением, команда интернет-магазина.</p>
+</body>
+</html>
