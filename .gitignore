@@ -2,6 +2,8 @@ postgres_data/
 staticfiles/
 logs/
 celerybeat-schedule
+.DS_Store
+shop/migrations/
 # Django #
 *.log
 *.pot
