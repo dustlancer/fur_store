@@ -1,6 +1,6 @@
 postgres_data/
 staticfiles/
-logs/
+logs/*
 celerybeat-schedule
 .DS_Store
 shop/migrations/

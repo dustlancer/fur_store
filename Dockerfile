@@ -17,5 +17,11 @@ COPY . /app/
 # Устанавливаем зависимости Python
 RUN pip install -r requirements.txt
 
+# Создаем миграции
+RUN python manage.py makemigrations
+
+# Выполняем миграции
+RUN python manage.py migrate
+
 # Команда по умолчанию
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "fur_store.wsgi:application"]
