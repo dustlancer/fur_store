@@ -16,9 +16,9 @@ class ProductEndpointTestCase(TestCase):
 
     def test_get_products(self):
         response = self.client.post(
-            reverse('products'),  # Используем правильный URL
-            data={"category": self.category.id},  # Передаём данные в запросе
-            content_type="application/json"  # Указываем тип содержимого
+            reverse('products'),
+            data={"category": self.category.id},
+            content_type="application/json"
         )
         self.assertEqual(response.status_code, 200)
         self.assertIn(self.product.name, [p['name'] for p in response.json()])

@@ -39,7 +39,6 @@ class ProductListView(APIView):
         category_id = request.data.get('category')
         
         if category_id:
-            # Рекурсивно собираем все вложенные категории
             category_ids = self.get_all_subcategories(category_id)
             products = Product.objects.filter(category_id__in=category_ids)
         else:
@@ -49,9 +48,7 @@ class ProductListView(APIView):
         return Response(serializer.data)
 
     def get_all_subcategories(self, category_id):
-        """
-        Рекурсивно собирает все вложенные категории, включая текущую.
-        """
+
         category_ids = [category_id]
         subcategories = Category.objects.filter(parent_id=category_id)
         for subcategory in subcategories:
@@ -171,7 +168,6 @@ class OrderCreateView(APIView):
 
         total_price = sum(item.get_total_price() for item in cart_items)
 
-        # Формируем список элементов заказа
         items = [
             {
                 'product': item.product.name,
@@ -181,17 +177,13 @@ class OrderCreateView(APIView):
             for item in cart_items
         ]
 
-        # Создаём заказ в базе данных
         order = Order.objects.create(
             user=request.user,
             total_price=float(total_price),
             items=items
         )
 
-        # Генерируем платёж через YooKassa, передавая items
         payment = self.create_payment(order.id, total_price, request.user.email, items)
-
-        # Очищаем корзину
         cart_items.delete()
 
         return Response({'payment_url': payment.confirmation['confirmation_url']}, status=status.HTTP_201_CREATED)
@@ -199,11 +191,9 @@ class OrderCreateView(APIView):
     def create_payment(self, order_id, total_price, email, items):
         from yookassa import Configuration, Payment
 
-        # Настройка API YooKassa
         Configuration.account_id = settings.YOOKASSA_SHOP_ID
         Configuration.secret_key = settings.YOOKASSA_SECRET_KEY
 
-        # Создаём платёж
         payment = Payment.create({
             "amount": {
                 "value": f"{total_price:.2f}",
@@ -240,27 +230,21 @@ class PaymentWebhookView(APIView):
         logger.info(f"webhook workin")
         try:
             logger.info(f"webhook workin")
-            # Преобразуем тело запроса из JSON-строки в словарь
+
             event_json = json.loads(request.body.decode('utf-8'))
             logger.info(f"webhook {event_json}")
             
-
-            # Создаём объект уведомления из данных
             notification = WebhookNotificationFactory().create(event_json)
 
             if notification.event == WebhookNotificationEventType.PAYMENT_SUCCEEDED:
                 payment = notification.object
                 order_id = int(payment.description.split('#')[1])  # Извлекаем ID заказа из описания
 
-                # Находим заказ и обновляем его статус
                 order = Order.objects.get(id=order_id)
                 order.status = 'paid'
                 order.save()
                 
 
-                # Отправляем письмо пользователю
-                # send_order_email_task.delay(order.user.email, 123, 1000, [{"product": "Test", "quantity": 1, "price": 1000}])
-                # print(f'------------- {request.user.email} {order.id}   {order.total_price}     {order.items}')
                 send_order_email_task.delay(
                     email=order.user.email,
                     order_id=order.id,
@@ -275,44 +259,8 @@ class PaymentWebhookView(APIView):
             return JsonResponse({'error': 'Order not found'}, status=404)
 
         except Exception as e:
-            # Логирование ошибок для отладки
             print(f"Error in Webhook processing: {e}")
             return JsonResponse({'error': str(e)}, status=500)
-
-    def send_order_email(self, email, order_id, total_price, items):
-        # Преобразуем данные в удобный формат для шаблона
-        items_with_total = [
-            {
-                "product": item["product"],
-                "quantity": item["quantity"],
-                "price": item["price"],
-                "total": item["quantity"] * item["price"]
-            }
-            for item in items
-        ]
-
-        # Генерируем HTML-письмо
-        html_content = render_to_string('order_email.html', {
-            'order_id': order_id,
-            'total_price': total_price,
-            'items': items_with_total
-        })
-
-        subject = f"Ваш заказ #{order_id} успешно создан"
-        text_content = (
-            f"Ваш заказ #{order_id} был успешно создан и оплачен.\n"
-            f"Общая сумма: {total_price} руб.\n"
-        )
-
-        # Создаём письмо
-        email_message = EmailMultiAlternatives(
-            subject=subject,
-            body=text_content,  # Текстовая версия письма (на случай, если HTML недоступен)
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[email]
-        )
-        email_message.attach_alternative(html_content, "text/html")  # Прикрепляем HTML-версию
-        email_message.send()
 
 
 def payment_success(request):

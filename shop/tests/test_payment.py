@@ -27,5 +27,4 @@
 #         response = self.client.post(reverse('payment_webhook'), data=json.dumps(data), content_type="application/json")
 #         self.assertEqual(response.status_code, 200)
 
-#         # Проверяем, что статус заказа обновился
 #         self.order.refresh_from_db()
